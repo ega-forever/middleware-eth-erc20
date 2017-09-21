@@ -1,0 +1,26 @@
+{
+  "name": "middleware-erc20-token",
+  "version": "1.0.0",
+  "description": "Chronobank ERC20 Token",
+  "main": "index.js",
+  "scripts": {
+    "lint": "node ./node_modules/eslint/bin/eslint.js -c .eslintrc.js --ext .js --fix --ignore-path .eslintignore .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "babel-eslint": "^8.0.0",
+    "eslint": "^4.7.1",
+    "eslint-plugin-chronobank": "github:chronobank/eslint-plugin-chronobank"
+  },
+  "dependencies": {
+    "amqplib": "^0.5.1",
+    "bluebird": "^3.5.0",
+    "dotenv": "^4.0.0",
+    "mongoose": "^4.11.12",
+    "require-all": "^2.2.0",
+    "truffle-contract": "^3.0.0",
+    "web3": "^1.0.0-beta.21"
+  }
+}
