@@ -11,7 +11,16 @@
   "license": "ISC",
   "devDependencies": {
     "babel-eslint": "^8.0.0",
-    "eslint": "^4.7.0",
+    "eslint": "^4.7.1",
     "eslint-plugin-chronobank": "github:chronobank/eslint-plugin-chronobank"
+  },
+  "dependencies": {
+    "amqplib": "^0.5.1",
+    "bluebird": "^3.5.0",
+    "dotenv": "^4.0.0",
+    "mongoose": "^4.11.12",
+    "require-all": "^2.2.0",
+    "truffle-contract": "^3.0.0",
+    "web3": "^1.0.0-beta.21"
   }
 }
