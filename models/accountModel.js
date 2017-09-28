@@ -14,8 +14,7 @@ const Account = new mongoose.Schema({
     validate: [a=>  /^(0x)?[0-9a-fA-F]{40}$/.test(a), messages.wrongAddress]
   },
   balance: {type: mongoose.Schema.Types.Long, default: 0},
-  created: {type: Date, required: true, default: Date.now},
-
+  created: {type: Date, required: true, default: Date.now}
 });
 
 module.exports = mongoose.model('EthAccount', Account);

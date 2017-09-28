@@ -1,17 +1,20 @@
 const _ = require('lodash'),
-  solidityEvent = require('web3/lib/web3/event.js'),
+  solidityEvent = require('../node_modules/web3/lib/web3/event.js'),
   config = require('../config');
 
 
-module.exports = async (tx, web3, multiAddress, smEvents) => {
+module.exports = async (tx, web3, smEvents) => {
 
   if (_.get(tx, 'logs', []).length === 0)
   {return [];}
+  
+  console.log('smEvents >',require('util').inspect(smEvents.signatures, { showHidden: true, depth: null }));
+  console.log('tx >',require('util').inspect(tx, { showHidden: true, depth: null }));
 
   return _.chain(tx.logs)
-    .filter(log => multiAddress.address === log.address)
     .map(ev => {
       let signatureDefinition = smEvents.signatures[ev.topics[0]];
+
       if (!signatureDefinition)
       {return;}
 
