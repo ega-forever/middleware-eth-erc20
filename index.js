@@ -1,15 +1,17 @@
-const contract = require('truffle-contract'),
-  config = require('./config'),
+const _ = require('lodash'),
+  amqp = require('amqplib'),
+  net = require('net'),
   Promise = require('bluebird'),
   mongoose = require('mongoose'),
-  accountModel = require('./models/accountModel'),
-  transactionModel = require('./models/transactionModel'),
-  filterTxsBySMEventsService = require('./services/filterTxsBySMEventsService'),
+  contract = require('truffle-contract'),
+  Web3 = require('web3'),
+  config = require('./config'),
   bunyan = require('bunyan'),
   log = bunyan.createLogger({name: 'core.chronoErc20Processor'}),
-  net = require('net'),
-  Web3 = require('web3'),
-  amqp = require('amqplib');
+  accountModel = require('./models/accountModel'),
+  transactionModel = require('./models/transactionModel'),
+  updateBalance = require('./services/updateBalance'),
+  filterTxsBySMEventsService = require('./services/filterTxsBySMEventsService');
 
 mongoose.Promise = Promise;
 mongoose.connect(config.mongo.uri, {useMongoClient: true});
@@ -22,10 +24,22 @@ let init = async () => {
   let conn = await amqp.connect(config.rabbit.url);
   let channel = await conn.createChannel();
 
+  // setup RPC provider 
   let provider = new Web3.providers.IpcProvider(config.web3.uri, net);
   const web3 = new Web3();
   web3.setProvider(provider);
 
+  // check wether SC deployed or not
+  let Erc20Contract = contract(erc20token);
+    Erc20Contract.setProvider(provider);
+    
+  let erc20instance = await Erc20Contract.deployed()
+    .catch(err => {
+      log.error('smart contract are not deployed!', err);
+      return process.exit(1);
+    });
+
+  // setup amqp
   try {
     await channel.assertExchange('events', 'topic', {durable: false});
     await channel.assertQueue(defaultQueue);
@@ -34,29 +48,15 @@ let init = async () => {
     log.error(e);
     channel = await conn.createChannel();
   }
-
-  let Erc20Contract = contract(erc20token);
-  Erc20Contract.setProvider(provider);
   
-  let erc20address = await Erc20Contract.deployed()
-    .then(res => res.address)
-    .catch(err => {
-      log.error('smart contract are not deployed!', err);
-      return process.exit(1);
-    });
-  
-  await accountModel.update({address: erc20address}, {$set: {address: erc20address}}, {
-    upsert: true,
-    setDefaultsOnInsert: true
-  });
-
   const parseJson = async function (data) {
     return JSON.parse(data);
   };
 
+  // listen to the amqp bus
   channel.consume(defaultQueue, async (data) => {
     let blockPayload;
-   // channel.ack(data);
+   channel.ack(data);
 
     blockPayload = await parseJson(data.content.toString())
       .catch(err => log.error(err));
@@ -67,11 +67,13 @@ let init = async () => {
     {return;}
 
     let filtered = await filterTxsBySMEventsService(tx, web3, smEvents);
-
+    // console.log('filtered >', filtered);
+    
     // save ETC20 Events to DB
     await Promise.all(
       filtered.map(ev => {
-        if (!ev) {return;}
+        if (!ev) {return; }
+        updateBalance(erc20instance, tx, ev.payload);
         ev.payload.save().catch(() => {});
       })
     );

@@ -11,8 +11,9 @@ contract('HumanStandard', function (accounts) {
   });
 
   it('creation: should create an initial balance of 10000 for the creator', async () => {
-    const balance = await HST.balanceOf.call(accounts[0])
-    console.log(balance.toNumber());
+    const balance0 = await HST.balanceOf.call(accounts[0])
+    const balance1 = await HST.balanceOf.call(accounts[1])
+    console.log('balance0=',balance0.toNumber(),'balance1=',balance1.toNumber());
     // assert.strictEqual(balance.toNumber(), 10000)
   })
 
@@ -58,8 +59,10 @@ contract('HumanStandard', function (accounts) {
   // })
 
   it('transfers: should transfer 10000 to accounts[1] with accounts[0] having 10000', async () => {
-    await HST.transfer(accounts[1], 10000, {from: accounts[0]});
-    const balance = await HST.balanceOf.call(accounts[1]);
+    await HST.transfer(accounts[1], 100, {from: accounts[0]});
+    const balance0 = await HST.balanceOf.call(accounts[0])
+    const balance1 = await HST.balanceOf.call(accounts[1])
+    console.log('balance0=',balance0.toNumber(),'balance1=',balance1.toNumber());
     assert.strictEqual(balance.toNumber(), 10000);
   });
 
@@ -75,11 +78,11 @@ contract('HumanStandard', function (accounts) {
   // // todo: transfer max amounts
 
   // APPROVALS
-  it('approvals: msg.sender should approve 100 to accounts[1]', async () => {
-    await HST.approve(accounts[1], 100, {from: accounts[0]});
-    const allowance = await HST.allowance.call(accounts[0], accounts[1]);
-    assert.strictEqual(allowance.toNumber(), 100);
-  });
+  // it('approvals: msg.sender should approve 100 to accounts[1]', async () => {
+  //   await HST.approve(accounts[1], 100, {from: accounts[0]});
+  //   const allowance = await HST.allowance.call(accounts[0], accounts[1]);
+  //   assert.strictEqual(allowance.toNumber(), 100);
+  // });
 
   // it('approvals: msg.sender should approve 100 to SampleRecipient and then NOTIFY SampleRecipient. It should succeed.', async () => {
   //   let SRS = await SampleRecipientSuccess.new({from: accounts[0]})
