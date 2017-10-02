@@ -53,10 +53,10 @@ let init = async () => {
     return JSON.parse(data);
   };
 
+  channel.prefetch(5);
   // listen to the amqp bus
   channel.consume(defaultQueue, async (data) => {
     let blockPayload;
-   channel.ack(data);
 
     blockPayload = await parseJson(data.content.toString())
       .catch(err => log.error(err));
@@ -67,7 +67,7 @@ let init = async () => {
     {return;}
 
     let filtered = await filterTxsBySMEventsService(tx, web3, smEvents);
-    // console.log('filtered >', filtered);
+    // console.log('filtered >', filtered.length);
     
     // save ETC20 Events to DB
     await Promise.all(
@@ -81,6 +81,8 @@ let init = async () => {
     if(tx.logs.length >0) {
       log.info(tx.logs[0].topics);
     }
+    
+    channel.ack(data);
   });
 };
 

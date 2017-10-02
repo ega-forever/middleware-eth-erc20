@@ -15,12 +15,17 @@ const updateBalance = async (erc20instance, tx, payload) => {
   const from = _.get(payload, 'from') || _.get(payload, 'owner');
   const to = _.get(payload, 'to') || _.get(payload, 'spender');
 
-  const zz = _.chain([from, to])
-    .map(async acc => {
+  const dbUpdates = _.chain([from, to])
+    .map(async (addr) => {
       let obj = {};
-      const balance = await getBalance(erc20instance, acc);
+      const balance = await getBalance(erc20instance, addr);
+
       obj[getAddress(tx, payload)] = balance;
-      await accountModel.update({address: acc}, {erc20token: obj});
-    });
+
+      return accountModel.update({address: addr}, {$set: {erc20token: obj}});
+    })
+    .value();
+
+  Promise.all(dbUpdates)
 };
 module.exports = updateBalance;
