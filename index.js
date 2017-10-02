@@ -57,6 +57,7 @@ let init = async () => {
   // listen to the amqp bus
   channel.consume(defaultQueue, async (data) => {
     let blockPayload;
+    channel.ack(data);
 
     blockPayload = await parseJson(data.content.toString())
       .catch(err => log.error(err));
@@ -73,7 +74,7 @@ let init = async () => {
     await Promise.all(
       filtered.map(ev => {
         if (!ev) {return; }
-        updateBalance(erc20instance, tx, ev.payload);
+        updateBalance(Erc20Contract, tx, ev.payload);
         ev.payload.save().catch(() => {});
       })
     );
@@ -81,8 +82,6 @@ let init = async () => {
     if(tx.logs.length >0) {
       log.info(tx.logs[0].topics);
     }
-    
-    channel.ack(data);
   });
 };
 
