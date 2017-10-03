@@ -8,7 +8,6 @@ const _ = require('lodash'),
   config = require('./config'),
   bunyan = require('bunyan'),
   log = bunyan.createLogger({name: 'core.chronoErc20Processor'}),
-  accountModel = require('./models/accountModel'),
   transactionModel = require('./models/transactionModel'),
   updateBalance = require('./services/updateBalance'),
   filterTxsBySMEventsService = require('./services/filterTxsBySMEventsService');
@@ -29,15 +28,8 @@ let init = async () => {
   const web3 = new Web3();
   web3.setProvider(provider);
 
-  // check wether SC deployed or not
   let Erc20Contract = contract(erc20token);
-    Erc20Contract.setProvider(provider);
-    
-  let erc20instance = await Erc20Contract.deployed()
-    .catch(err => {
-      log.error('smart contract are not deployed!', err);
-      return process.exit(1);
-    });
+      Erc20Contract.setProvider(provider);
 
   // setup amqp
   try {
@@ -64,17 +56,16 @@ let init = async () => {
 
     let tx = await transactionModel.findOne({payload: blockPayload});
 
-    if (!tx)
-    {return;}
+    if (!tx) return;
 
     let filtered = await filterTxsBySMEventsService(tx, web3, smEvents);
     // console.log('filtered >', filtered.length);
     
     // save ETC20 Events to DB
     await Promise.all(
-      filtered.map(ev => {
-        if (!ev) {return; }
-        updateBalance(Erc20Contract, tx, ev.payload);
+      _.map(filtered, (ev, index) => {
+        if (!ev) return;
+        updateBalance(Erc20Contract, tx.logs[index].address, ev.payload);
         ev.payload.save().catch(() => {});
       })
     );
