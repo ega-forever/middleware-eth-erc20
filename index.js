@@ -53,10 +53,11 @@ let init = async () => {
     return JSON.parse(data);
   };
 
+  channel.prefetch(5);
   // listen to the amqp bus
   channel.consume(defaultQueue, async (data) => {
     let blockPayload;
-   channel.ack(data);
+    channel.ack(data);
 
     blockPayload = await parseJson(data.content.toString())
       .catch(err => log.error(err));
@@ -67,13 +68,13 @@ let init = async () => {
     {return;}
 
     let filtered = await filterTxsBySMEventsService(tx, web3, smEvents);
-    // console.log('filtered >', filtered);
+    // console.log('filtered >', filtered.length);
     
     // save ETC20 Events to DB
     await Promise.all(
       filtered.map(ev => {
         if (!ev) {return; }
-        updateBalance(erc20instance, tx, ev.payload);
+        updateBalance(Erc20Contract, tx, ev.payload);
         ev.payload.save().catch(() => {});
       })
     );
