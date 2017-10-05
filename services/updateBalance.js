@@ -11,12 +11,12 @@ const updateBalance = async (erc20instance, erc20addr, payload) => {
     to = _.get(payload, 'to') || _.get(payload, 'spender'),
     instance = await erc20instance.at(erc20addr);
 
-    for(let addr of [from, to]) {
-      let obj = {};
-      const balance = await getBalance(instance, addr);
+  for(let addr of [from, to]) {
+    let obj = {};
+    const balance = await getBalance(instance, addr);
       
-      obj[`erc20token.${erc20addr}`] = balance;
-      await accountModel.update({address: addr}, {$set: obj});
-    }
+    obj[`erc20token.${erc20addr}`] = balance;
+    await accountModel.update({address: addr}, {$set: obj});
+  }
 };
 module.exports = updateBalance;
