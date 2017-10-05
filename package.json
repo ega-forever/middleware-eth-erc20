@@ -5,14 +5,17 @@
   "main": "index.js",
   "scripts": {
     "lint": "node ./node_modules/eslint/bin/eslint.js -c .eslintrc.js --ext .js --fix --ignore-path .eslintignore .",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node ./node_modules/mocha/bin/mocha -t 90000 tests"
   },
   "author": "",
   "license": "ISC",
   "devDependencies": {
     "babel-eslint": "^8.0.0",
+    "chai": "^4.1.2",
     "eslint": "^4.7.1",
-    "eslint-plugin-chronobank": "github:chronobank/eslint-plugin-chronobank"
+    "eslint-plugin-chronobank": "github:chronobank/eslint-plugin-chronobank",
+    "middleware-eth-blockprocessor": "github:chronobank/middleware-eth-blockprocessor",
+    "mocha": "^4.0.0"
   },
   "dependencies": {
     "amqplib": "^0.5.1",
