@@ -8,7 +8,6 @@ const _ = require('lodash'),
   config = require('./config'),
   bunyan = require('bunyan'),
   log = bunyan.createLogger({name: 'core.chronoErc20Processor'}),
-  transactionModel = require('./models/transactionModel'),
   updateBalance = require('./services/updateBalance'),
   filterTxsBySMEventsService = require('./services/filterTxsBySMEventsService');
 
@@ -23,7 +22,6 @@ let init = async () => {
   let conn = await amqp.connect(config.rabbit.url);
   let channel = await conn.createChannel();
 
-  // setup RPC provider 
   let provider = new Web3.providers.IpcProvider(config.web3.uri, net);
   const web3 = new Web3();
   web3.setProvider(provider);
@@ -31,7 +29,6 @@ let init = async () => {
   let Erc20Contract = contract(erc20token);
   Erc20Contract.setProvider(provider);
 
-  // setup amqp
   try {
     await channel.assertExchange('events', 'topic', {durable: false});
     await channel.assertQueue(defaultQueue);
@@ -40,38 +37,29 @@ let init = async () => {
     log.error(e);
     channel = await conn.createChannel();
   }
-  
-  const parseJson = async function (data) {
-    return JSON.parse(data);
-  };
 
-  channel.prefetch(5);
-  // listen to the amqp bus
+  channel.prefetch(2);
   channel.consume(defaultQueue, async (data) => {
-    let blockPayload;
-    channel.ack(data);
+    try {
 
-    blockPayload = await parseJson(data.content.toString())
-      .catch(err => log.error(err));
+      let blockHash = JSON.parse(data.content.toString());
+      let tx = await Promise.promisify(web3.eth.getTransactionReceipt)(blockHash);
+      let filtered = tx ? await filterTxsBySMEventsService(tx, web3, smEvents) : [];
 
-    let tx = await transactionModel.findOne({payload: blockPayload});
-    if (!tx) return;
+      await Promise.all(
+        _.map(filtered, (ev, index) => {
+          if (!ev) return;
+          updateBalance(Erc20Contract, tx.logs[index].address, ev.payload);
+          ev.payload.save().catch(() => {
+          });
+        })
+      );
 
-    let filtered = await filterTxsBySMEventsService(tx, web3, smEvents);
-    // console.log('filtered >', filtered.length);
-    
-    // save ETC20 Events to DB
-    await Promise.all(
-      _.map(filtered, (ev, index) => {
-        if (!ev) return;
-        updateBalance(Erc20Contract, tx.logs[index].address, ev.payload);
-        ev.payload.save().catch(() => {});
-      })
-    );
-
-    if(tx.logs.length >0) {
-      log.info(tx.logs[0].topics);
+    } catch (e) {
+      log.error(e);
     }
+
+    channel.ack(data);
   });
 };
 
