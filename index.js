@@ -29,7 +29,7 @@ let init = async () => {
   web3.setProvider(provider);
 
   let Erc20Contract = contract(erc20token);
-      Erc20Contract.setProvider(provider);
+  Erc20Contract.setProvider(provider);
 
   // setup amqp
   try {
@@ -55,7 +55,6 @@ let init = async () => {
       .catch(err => log.error(err));
 
     let tx = await transactionModel.findOne({payload: blockPayload});
-
     if (!tx) return;
 
     let filtered = await filterTxsBySMEventsService(tx, web3, smEvents);
