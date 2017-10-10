@@ -1,6 +1,15 @@
+<<<<<<< Updated upstream
 # middleware-eth-erc20 [![Build Status](https://travis-ci.org/ChronoBank/middleware-eth-erc20.svg?branch=master)](https://travis-ci.org/ChronoBank/middleware-eth-erc20)
 
 Middleware service for handling ERC20 emitted events on chronobank platform
+=======
+<<<<<<< Updated upstream
+# middleware-eth-erc20
+=======
+# middleware-eth-erc20 [![Build Status](https://travis-ci.org/ChronoBank/middleware-eth-erc20.svg?branch=master)](https://travis-ci.org/ChronoBank/middleware-eth-erc20)
+
+Middleware service for handling ERC20 token smart contracts
+>>>>>>> Stashed changes
 
 ###Installation
 
@@ -47,4 +56,9 @@ The options are presented below:
 License
 ----
 
+<<<<<<< Updated upstream
 MIT
+=======
+MIT
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
