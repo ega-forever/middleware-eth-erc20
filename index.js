@@ -1,5 +1,4 @@
-const _ = require('lodash'),
-  amqp = require('amqplib'),
+const amqp = require('amqplib'),
   net = require('net'),
   Promise = require('bluebird'),
   mongoose = require('mongoose'),
@@ -14,7 +13,7 @@ const _ = require('lodash'),
 mongoose.Promise = Promise;
 mongoose.connect(config.mongo.uri, {useMongoClient: true});
 
-const defaultQueue = 'app_eth.chrono_eth20_processor';
+const defaultQueue = `app_${config.rabbit.serviceName}.chrono_eth20_processor`;
 const erc20token = require('./build/contracts/TokenContract.json');
 const smEvents = require('./controllers/eventsCtrl')(erc20token);
 
@@ -32,7 +31,7 @@ let init = async () => {
   try {
     await channel.assertExchange('events', 'topic', {durable: false});
     await channel.assertQueue(defaultQueue);
-    await channel.bindQueue(defaultQueue, 'events', 'eth_transaction.*');
+    await channel.bindQueue(defaultQueue, 'events', `${config.rabbit.serviceName}_transaction.*`);
   } catch (e) {
     log.error(e);
     channel = await conn.createChannel();
@@ -41,19 +40,19 @@ let init = async () => {
   channel.prefetch(2);
   channel.consume(defaultQueue, async (data) => {
     try {
-
       let blockHash = JSON.parse(data.content.toString());
       let tx = await Promise.promisify(web3.eth.getTransactionReceipt)(blockHash);
       let filtered = tx ? await filterTxsBySMEventsService(tx, web3, smEvents) : [];
 
-      await Promise.all(
-        _.map(filtered, (ev, index) => {
-          if (!ev) return;
-          updateBalance(Erc20Contract, tx.logs[index].address, ev.payload);
-          ev.payload.save().catch(() => {
-          });
-        })
-      );
+      for (let i = 0; i < filtered.length; i++) {
+        let event = filtered[i];
+        let updatedBalances = await updateBalance(Erc20Contract, tx.logs[i].address, event.payload);
+        await event.payload.save().catch(() => {
+        });
+
+        for (let updateBalance of updatedBalances)
+          channel.publish('events', `${config.rabbit.serviceName}_chrono_eth20_processor.${event.name.toLowerCase()}`, new Buffer(JSON.stringify(updateBalance)));
+      }
 
     } catch (e) {
       log.error(e);
