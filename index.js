@@ -18,30 +18,46 @@ const erc20token = require('./build/contracts/TokenContract.json');
 const smEvents = require('./controllers/eventsCtrl')(erc20token);
 
 let init = async () => {
-  let conn = await amqp.connect(config.rabbit.url);
+
+  let conn = await amqp.connect(config.rabbit.url)
+    .catch(() => {
+      log.error('rabbitmq is not available!');
+      process.exit(0);
+    });
+
   let channel = await conn.createChannel();
+
+  channel.on('close', () => {
+    log.error('rabbitmq process has finished!');
+    process.exit(0);
+  });
 
   let provider = new Web3.providers.IpcProvider(config.web3.uri, net);
   const web3 = new Web3();
   web3.setProvider(provider);
 
+  web3.currentProvider.connection.on('end', () => {
+    log.error('ipc process has finished!');
+    process.exit(0);
+  });
+
+  web3.currentProvider.connection.on('error', () => {
+    log.error('ipc process has finished!');
+    process.exit(0);
+  });
+
   let Erc20Contract = contract(erc20token);
   Erc20Contract.setProvider(provider);
 
-  try {
-    await channel.assertExchange('events', 'topic', {durable: false});
-    await channel.assertQueue(defaultQueue);
-    await channel.bindQueue(defaultQueue, 'events', `${config.rabbit.serviceName}_transaction.*`);
-  } catch (e) {
-    log.error(e);
-    channel = await conn.createChannel();
-  }
+  await channel.assertExchange('events', 'topic', {durable: false});
+  await channel.assertQueue(defaultQueue);
+  await channel.bindQueue(defaultQueue, 'events', `${config.rabbit.serviceName}_transaction.*`);
 
   channel.prefetch(2);
   channel.consume(defaultQueue, async (data) => {
     try {
-      let blockHash = JSON.parse(data.content.toString());
-      let tx = await Promise.promisify(web3.eth.getTransactionReceipt)(blockHash);
+      let block = JSON.parse(data.content.toString());
+      let tx = await Promise.promisify(web3.eth.getTransactionReceipt)(block.hash);
       let filtered = tx ? await filterTxsBySMEventsService(tx, web3, smEvents) : [];
 
       for (let i = 0; i < filtered.length; i++) {
