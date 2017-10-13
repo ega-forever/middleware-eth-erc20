@@ -1,5 +1,4 @@
-const _ = require('lodash'),
-  amqp = require('amqplib'),
+const amqp = require('amqplib'),
   net = require('net'),
   Promise = require('bluebird'),
   mongoose = require('mongoose'),
@@ -14,46 +13,62 @@ const _ = require('lodash'),
 mongoose.Promise = Promise;
 mongoose.connect(config.mongo.uri, {useMongoClient: true});
 
-const defaultQueue = 'app_eth.chrono_eth20_processor';
+const defaultQueue = `app_${config.rabbit.serviceName}.chrono_eth20_processor`;
 const erc20token = require('./build/contracts/TokenContract.json');
 const smEvents = require('./controllers/eventsCtrl')(erc20token);
 
 let init = async () => {
-  let conn = await amqp.connect(config.rabbit.url);
+
+  let conn = await amqp.connect(config.rabbit.url)
+    .catch(() => {
+      log.error('rabbitmq is not available!');
+      process.exit(0);
+    });
+
   let channel = await conn.createChannel();
+
+  channel.on('close', () => {
+    log.error('rabbitmq process has finished!');
+    process.exit(0);
+  });
 
   let provider = new Web3.providers.IpcProvider(config.web3.uri, net);
   const web3 = new Web3();
   web3.setProvider(provider);
 
+  web3.currentProvider.connection.on('end', () => {
+    log.error('ipc process has finished!');
+    process.exit(0);
+  });
+
+  web3.currentProvider.connection.on('error', () => {
+    log.error('ipc process has finished!');
+    process.exit(0);
+  });
+
   let Erc20Contract = contract(erc20token);
   Erc20Contract.setProvider(provider);
 
-  try {
-    await channel.assertExchange('events', 'topic', {durable: false});
-    await channel.assertQueue(defaultQueue);
-    await channel.bindQueue(defaultQueue, 'events', 'eth_transaction.*');
-  } catch (e) {
-    log.error(e);
-    channel = await conn.createChannel();
-  }
+  await channel.assertExchange('events', 'topic', {durable: false});
+  await channel.assertQueue(defaultQueue);
+  await channel.bindQueue(defaultQueue, 'events', `${config.rabbit.serviceName}_transaction.*`);
 
   channel.prefetch(2);
   channel.consume(defaultQueue, async (data) => {
     try {
-
-      let blockHash = JSON.parse(data.content.toString());
-      let tx = await Promise.promisify(web3.eth.getTransactionReceipt)(blockHash);
+      let block = JSON.parse(data.content.toString());
+      let tx = await Promise.promisify(web3.eth.getTransactionReceipt)(block.hash);
       let filtered = tx ? await filterTxsBySMEventsService(tx, web3, smEvents) : [];
 
-      await Promise.all(
-        _.map(filtered, (ev, index) => {
-          if (!ev) return;
-          updateBalance(Erc20Contract, tx.logs[index].address, ev.payload);
-          ev.payload.save().catch(() => {
-          });
-        })
-      );
+      for (let i = 0; i < filtered.length; i++) {
+        let event = filtered[i];
+        let updatedBalances = await updateBalance(Erc20Contract, tx.logs[i].address, event.payload);
+        await event.payload.save().catch(() => {
+        });
+
+        for (let updateBalance of updatedBalances)
+          channel.publish('events', `${config.rabbit.serviceName}_chrono_eth20_processor.${event.name.toLowerCase()}`, new Buffer(JSON.stringify(updateBalance)));
+      }
 
     } catch (e) {
       log.error(e);
