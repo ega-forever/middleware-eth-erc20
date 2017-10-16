@@ -1,17 +1,8 @@
-<<<<<<< Updated upstream
-# middleware-eth-erc20 [![Build Status](https://travis-ci.org/ChronoBank/middleware-eth-erc20.svg?branch=master)](https://travis-ci.org/ChronoBank/middleware-eth-erc20)
-
-Middleware service for handling ERC20 emitted events on chronobank platform
-=======
-<<<<<<< Updated upstream
-# middleware-eth-erc20
-=======
 # middleware-eth-erc20 [![Build Status](https://travis-ci.org/ChronoBank/middleware-eth-erc20.svg?branch=master)](https://travis-ci.org/ChronoBank/middleware-eth-erc20)
 
 Middleware service for handling ERC20 token smart contracts
->>>>>>> Stashed changes
 
-###Installation
+### Installation
 
 This module is a part of middleware services. You can install it in 2 ways:
 
@@ -19,7 +10,7 @@ This module is a part of middleware services. You can install it in 2 ways:
 2) By hands: just clone the repo, do 'npm install', set your .env - and you are ready to go
 
 #### About
-This module is used for processing events, emitted on chronobank ERC20 smart contracts (see a description of accounts in [block processor](https://github.com/ChronoBank/middleware-eth-blockprocessor)).
+This module is used for processing events, emitted on chronobank ERC20 smart contracts, and handling balance update of certain address, who subscribed to this token (see a description of token routes in [rest](https://github.com/ChronoBank/middleware-eth-rest)).
 
 #### How does it work
 
@@ -28,7 +19,7 @@ This how does it work:
 2) Blockprocessor populate Ethtransactions collection with matched transactions by tx.to, tx.from, addresses from logs and EthAccounts.erc20token collection;
 3) Erc20Processor listen to RabbitMQ "eth_transaction.\*" routing keys and filter out those txs which corresponds to the ERC20 tokens by signature in logs.topics[0];
 4) Module extracts event's data from matched transactions and save it to DB (Transfers, Approvals collections for ERC20).
-5) Moreover ERC20Processor push to the RabbitMQ ("eth_balance.${account.address}") and DB (EthAccounts.erc20token collection) any balance updates.
+5) Moreover ERC20Processor push balance update to the RabbitMQ under the following route  <RABBIT_SERVICE_NAME>_chrono_eth20_processor.<event_name>,  and to DB (EthAccounts.erc20token collection).
 
 ##### сonfigure your .env
 
@@ -38,9 +29,9 @@ Below is the expamle configuration:
 ```
 MONGO_URI=mongodb://localhost:27017/data
 RABBIT_URI=amqp://localhost:5672
-SMART_CONTRACTS_EVENTS_TTL=0
-TRANSACTION_TTL=0
+RABBIT_SERVICE_NAME=app_eth
 NETWORK=development
+WEB3_URI=/tmp/development/geth.ipc
 ```
 
 The options are presented below:
@@ -49,16 +40,11 @@ The options are presented below:
 | ------ | ------ |
 | MONGO_URI   | the URI string for mongo connection
 | RABBIT_URI   | rabbitmq URI connection string
-| SMART_CONTRACTS_EVENTS_TTL   | how long should we keep events in db (should be set in seconds)
-| TRANSACTION_TTL   | how long should we keep transactions in db (should be set in seconds)
+| RABBIT_SERVICE_NAME   | namespace for all rabbitmq queues, like 'app_eth_transaction'
 | NETWORK   | network name (alias)- is used for connecting via ipc (see block processor section)
+| WEB3_URI   | the path to ipc interface
 
 License
 ----
+MIT
 
-<<<<<<< Updated upstream
-MIT
-=======
-MIT
->>>>>>> Stashed changes
->>>>>>> Stashed changes
