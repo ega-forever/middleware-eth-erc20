@@ -1,3 +1,12 @@
+/**
+ * Ping IPFS by specified time in config
+ *
+ * @module services/filterTxsBySMEvents
+ * @param {Object} tx Array of transactions
+ * @param {Object} web3 Instance of Web3
+ * @returns {array} Array of filtered transactions
+ */
+
 const _ = require('lodash'),
   solidityEvent = require('../node_modules/web3/lib/web3/event.js'),
   config = require('../config');
@@ -6,7 +15,6 @@ module.exports = async (tx, web3, smEvents) => {
 
   if (_.get(tx, 'logs', []).length === 0)
     return [];
-
 
   return _.chain(tx.logs)
     .map(ev => {
