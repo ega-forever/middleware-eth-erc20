@@ -1,5 +1,5 @@
 /**
- * Ping IPFS by specified time in config
+ * Filtering transactions by smart contract events
  *
  * @module services/filterTxsBySMEvents
  * @param {Object} tx Array of transactions

@@ -1,5 +1,5 @@
 /** 
- * Mongoose model. Used to store hashes, which need to be pinned.
+ * Mongoose model. Accounts
  * @module models/accountModel
  * @returns {Object} Mongoose model
  * @requires factory/accountMessageFactory
