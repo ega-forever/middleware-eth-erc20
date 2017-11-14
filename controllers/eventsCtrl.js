@@ -1,3 +1,8 @@
+/**
+ * Initialize all events for smartContracts
+ * @module controllers/events
+ */
+
 const _ = require('lodash'),
   utils = require('web3/lib/utils/utils.js'),
   Web3 = require('web3'),
@@ -6,12 +11,10 @@ const _ = require('lodash'),
   mongoose = require('mongoose');
 
 /**
- * @module events Controller
- * @description initialize all events for smartContracts,
- * @param contracts - instances of smartContracts
- * @returns {{eventModels, signatures}}
+ * Process all Smart Contracts, exstracts signatures and builds Event Models
+ * @param  {array} contracts Instances of Smart Contracts
+ * @return {Object} Returns {eventModels, signatures} 
  */
-
 module.exports = (contracts) => {
 
   let eventModels = _.chain(contracts)
