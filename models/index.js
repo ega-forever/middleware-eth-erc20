@@ -1,8 +1,10 @@
+/** 
+ * Bootstrap file for rescursive search & exposing models
+ * @returns {Object} models
+ */
+
 const requireAll = require('require-all');
 
-/** @factory
- *  @description search for all Models and expose them
- */
 module.exports = requireAll({
   dirname     :  __dirname,
   filter      :  /(.+Model)\.js$/,

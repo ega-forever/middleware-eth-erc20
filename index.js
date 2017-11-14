@@ -1,3 +1,11 @@
+/**
+ * Middleware service for handling ERC20 token smart contracts
+ * @module Chronobank/eth-erc20
+ * @requires models/pinModel
+ * @requires services/updateBalance
+ * @requires services/filterTxsBySMEventsService
+ */
+
 const amqp = require('amqplib'),
   net = require('net'),
   Promise = require('bluebird'),
@@ -17,8 +25,8 @@ const defaultQueue = `app_${config.rabbit.serviceName}.chrono_eth20_processor`;
 const erc20token = require('./build/contracts/TokenContract.json');
 const smEvents = require('./controllers/eventsCtrl')(erc20token);
 
-let init = async () => {
 
+let init = async () => {
   let conn = await amqp.connect(config.rabbit.url)
     .catch(() => {
       log.error('rabbitmq is not available!');
@@ -69,7 +77,6 @@ let init = async () => {
         for (let updateBalance of updatedBalances)
           channel.publish('events', `${config.rabbit.serviceName}_chrono_eth20_processor.${event.name.toLowerCase()}`, new Buffer(JSON.stringify(updateBalance)));
       }
-
     } catch (e) {
       log.error(e);
     }
