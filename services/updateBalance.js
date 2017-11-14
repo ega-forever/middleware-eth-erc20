@@ -1,11 +1,29 @@
+/**
+ * Updates balances
+ * @module models/accountModel
+ */
+
 const _ = require('lodash'),
   accountModel = require('../models/accountModel');
 
+/**
+ * Get balance from the network
+ * @param  {Object} instance Web3 instance
+ * @param  {string} acc      Account address
+ * @return {number}          Actual Balance 
+ */
 const getBalance = async (instance, acc) => {
   const balance = await instance.balanceOf(acc);
   return balance.toNumber();
 };
 
+/**
+ * Balance updater
+ * @param  {Object} Erc20Contract Instance of ERC20 contract
+ * @param  {string} erc20addr     Address of ERC20 contract
+ * @param  {Object} payload       Payload of transaction
+ * @return {array}                Array of objects {address, balance}
+ */
 const updateBalance = async (Erc20Contract, erc20addr, payload) => {
   const from = _.get(payload, 'from') || _.get(payload, 'owner'),
     to = _.get(payload, 'to') || _.get(payload, 'spender'),
@@ -20,4 +38,5 @@ const updateBalance = async (Erc20Contract, erc20addr, payload) => {
       return {address, balance};
     }));
 };
+
 module.exports = updateBalance;
