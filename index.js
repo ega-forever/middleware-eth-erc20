@@ -21,6 +21,11 @@ const amqp = require('amqplib'),
 mongoose.Promise = Promise;
 mongoose.connect(config.mongo.uri, {useMongoClient: true});
 
+mongoose.connection.on('disconnected', function () {
+  log.error('mongo disconnected!');
+  process.exit(0);
+});
+
 const defaultQueue = `app_${config.rabbit.serviceName}.chrono_eth20_processor`;
 const erc20token = require('./build/contracts/TokenContract.json');
 const smEvents = require('./controllers/eventsCtrl')(erc20token);
