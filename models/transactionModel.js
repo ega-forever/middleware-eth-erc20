@@ -1,10 +1,15 @@
+/** 
+ * Mongoose model. Represents 
+ * @module models/transactionModel
+ * @returns {Object} Mongoose model
+ * @requires factories/txMessageFactory
+ * @requires config
+ */
+
 const mongoose = require('mongoose'),
   config = require('../config'),
-  messages = require('../factories/messages/transactionMessageFactory');
+  messages = require('../factories/messages/txMessageFactory');
 
-/** @model transactionModel
- *  @description block model - represents a block in eth
- */
 const Transaction = new mongoose.Schema({
   blockHash: {type: String},
   blockNumber: {type: String},
@@ -12,7 +17,6 @@ const Transaction = new mongoose.Schema({
     type: String,
     required: true,
     validate: [ a => /^(0x)?[0-9a-fA-F]{40}$/.test(a), messages.wrongFrom]
-
   },
   gasUsed: {type: String},
   root: {type: String},
@@ -30,10 +34,8 @@ const Transaction = new mongoose.Schema({
     required: true
   },
   logs: [{type: mongoose.Schema.Types.Mixed}],
-  created: {type: Date, required: true, default: Date.now, expires: config.transactions.ttl},
-
+  created: {type: Date, required: true, default: Date.now, expires: config.transactions.ttl}
 });
-
 
 Transaction.pre('validate', function (next) {
   this.payload = `${this.blockNumber}:${this.hash}`;
