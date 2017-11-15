@@ -2,13 +2,13 @@
  * Mongoose model. Represents 
  * @module models/transactionModel
  * @returns {Object} Mongoose model
- * @requires factory/accountMessageFactory
+ * @requires factories/txMessageFactory
  * @requires config
  */
 
 const mongoose = require('mongoose'),
   config = require('../config'),
-  messages = require('../factories/messages/transactionMessageFactory');
+  messages = require('../factories/messages/txMessageFactory');
 
 const Transaction = new mongoose.Schema({
   blockHash: {type: String},
