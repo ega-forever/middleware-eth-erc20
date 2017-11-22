@@ -35,6 +35,7 @@ module.exports = async (tx, web3, smEvents) => {
         }))
         .value();
     })
+    .filter(ev=>_.has(ev, 'payload'))
     .value();
 
 };

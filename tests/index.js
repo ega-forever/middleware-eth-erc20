@@ -38,7 +38,7 @@ describe('core/sc processor', function () {
   });
 
   it('add account to mongo', async () => {
-    await new accountModel.insertMany([{address: accounts[0]}, {address: accounts[1]}])
+    await new accountModel.insertMany([{address: accounts[0], erc20token: {[TC.address]: 0}}, {address: accounts[1]}])
       .catch(err => console.error(err));
   });
 
@@ -72,7 +72,7 @@ describe('core/sc processor', function () {
   
   it('transfer: check DB creator account record', async () => {
     await Promise.delay(15000);
-    let result = await accountModel.findOne({address: accounts[0]}, {erc20token: true});
+    let result = await accountModel.findOne({address: accounts[0]});
     
     expect(result).to.have.property('erc20token');
     expect(result.erc20token).to.have.property(TC.address);
@@ -80,7 +80,7 @@ describe('core/sc processor', function () {
   });
 
   it('transfer: check DB recipient account record', async () => {
-    let result = await accountModel.findOne({address: accounts[1]}, {erc20token: true});
+    let result = await accountModel.findOne({address: accounts[1]});
     
     expect(result).to.have.property('erc20token');
     expect(result.erc20token).to.have.property(TC.address);
