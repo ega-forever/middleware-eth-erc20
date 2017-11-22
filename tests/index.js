@@ -3,7 +3,6 @@ require('dotenv/config');
 const config = require('../config'),
   expect = require('chai').expect,
   net = require('net'),
-  require_all = require('require-all'),
   contract = require('truffle-contract'),
   erc20token = require('../build/contracts/TokenContract.json'),
   erc20contract = contract(erc20token),
@@ -39,7 +38,7 @@ describe('core/sc processor', function () {
   });
 
   it('add account to mongo', async () => {
-    await new accountModel.insertMany([{address: accounts[0]}, {address: accounts[1]}])
+    await new accountModel.insertMany([{address: accounts[0], erc20token: {[TC.address]: 0}}, {address: accounts[1]}])
       .catch(err => console.error(err));
   });
 
@@ -55,17 +54,17 @@ describe('core/sc processor', function () {
 
   // CREATION
   it('creation: should create an initial balance of 1000000 for the creator', async () => {
-    let balance = await TC.balanceOf.call(accounts[0])
+    let balance = await TC.balanceOf.call(accounts[0]);
     expect(balance.toNumber()).to.equal(1000000);
   });
 
   //TRANSERS
   it('transfer: should transfer 100000 from creator to account[1]', async () => {
-    let balance = []
-    transfer = await TC.transfer(accounts[1], 100000, {from: accounts[0]})
-    await Promise.delay(5000)
-    balance[0] = await TC.balanceOf.call(accounts[0])
-    balance[1] = await TC.balanceOf.call(accounts[1])
+    let balance = [];
+    transfer = await TC.transfer(accounts[1], 100000, {from: accounts[0]});
+    await Promise.delay(5000);
+    balance[0] = await TC.balanceOf.call(accounts[0]);
+    balance[1] = await TC.balanceOf.call(accounts[1]);
 
     expect(balance[0].toNumber()).to.equal(900000);
     expect(balance[1].toNumber()).to.equal(100000);
@@ -73,7 +72,7 @@ describe('core/sc processor', function () {
   
   it('transfer: check DB creator account record', async () => {
     await Promise.delay(15000);
-    result = await accountModel.findOne({address: accounts[0]}, {erc20token: true});
+    let result = await accountModel.findOne({address: accounts[0]});
     
     expect(result).to.have.property('erc20token');
     expect(result.erc20token).to.have.property(TC.address);
@@ -81,7 +80,7 @@ describe('core/sc processor', function () {
   });
 
   it('transfer: check DB recipient account record', async () => {
-    result = await accountModel.findOne({address: accounts[1]}, {erc20token: true});
+    let result = await accountModel.findOne({address: accounts[1]});
     
     expect(result).to.have.property('erc20token');
     expect(result.erc20token).to.have.property(TC.address);
@@ -89,11 +88,11 @@ describe('core/sc processor', function () {
   });
 
   it('transfer: should transfer from account[1] account[0]', async () =>{
-    let balance = []
-    transfer = await TC.transfer(accounts[0], 100000, {from: accounts[1]})
+    let balance = [];
+    transfer = await TC.transfer(accounts[0], 100000, {from: accounts[1]});
     await Promise.delay(5000);
-    balance[0] = await TC.balanceOf.call(accounts[0])
-    balance[1] = await TC.balanceOf.call(accounts[1])
+    balance[0] = await TC.balanceOf.call(accounts[0]);
+    balance[1] = await TC.balanceOf.call(accounts[1]);
 
     expect(balance[0].toNumber()).to.equal(1000000);
     expect(balance[1].toNumber()).to.equal(0);
