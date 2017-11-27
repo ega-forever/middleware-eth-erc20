@@ -2,11 +2,11 @@
  * Mongoose model. Accounts
  * @module models/accountModel
  * @returns {Object} Mongoose model
- * @requires factory/accountMessageFactory
+ * @requires factories/addressMessageFactory
  */
 
 const mongoose = require('mongoose'),
-  messages = require('../factories').messages.accountMessageFactory;
+  messages = require('../factories/messages/addressMessageFactory');
 
 require('mongoose-long')(mongoose);
 
