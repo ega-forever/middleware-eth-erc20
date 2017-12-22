@@ -6,30 +6,33 @@
  * @requires services/filterTxsBySMEventsService
  */
 
+const config = require('./config'),
+  Promise = require('bluebird'),
+  mongoose = require('mongoose');
+
+mongoose.Promise = Promise;
+mongoose.connect(config.mongo.data.uri, {useMongoClient: true});
+mongoose.accounts = mongoose.createConnection(config.mongo.accounts.uri);
+
 const amqp = require('amqplib'),
   net = require('net'),
-  Promise = require('bluebird'),
-  mongoose = require('mongoose'),
   contract = require('truffle-contract'),
   Web3 = require('web3'),
-  config = require('./config'),
   bunyan = require('bunyan'),
   log = bunyan.createLogger({name: 'core.chronoErc20Processor'}),
   updateBalance = require('./services/updateBalance'),
   filterTxsBySMEventsService = require('./services/filterTxsBySMEventsService');
 
-mongoose.Promise = Promise;
-mongoose.connect(config.mongo.uri, {useMongoClient: true});
-
-mongoose.connection.on('disconnected', function () {
-  log.error('mongo disconnected!');
-  process.exit(0);
-});
+[mongoose.accounts, mongoose.connection].forEach(connection =>
+  connection.on('disconnected', function () {
+    log.error('mongo disconnected!');
+    process.exit(0);
+  })
+);
 
 const defaultQueue = `app_${config.rabbit.serviceName}.chrono_eth20_processor`;
 const erc20token = require('./build/contracts/TokenContract.json');
 const smEvents = require('./controllers/eventsCtrl')(erc20token);
-
 
 let init = async () => {
   let conn = await amqp.connect(config.rabbit.url)
@@ -73,6 +76,7 @@ let init = async () => {
       let tx = await Promise.promisify(web3.eth.getTransactionReceipt)(block.hash);
       let filtered = tx ? await filterTxsBySMEventsService(tx, web3, smEvents) : [];
 
+      console.log(filtered);
       for (let i = 0; i < filtered.length; i++) {
         let event = filtered[i];
         let updatedBalances = await updateBalance(Erc20Contract, tx.logs[i].address, event.payload);
