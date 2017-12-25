@@ -1,7 +1,14 @@
 require('dotenv/config');
 
 const config = require('../config'),
-  expect = require('chai').expect,
+  Promise = require('bluebird'),
+  mongoose = require('mongoose');
+
+mongoose.Promise = Promise;
+mongoose.accounts = mongoose.createConnection(config.mongo.accounts.uri);
+mongoose.connect(config.mongo.data.uri, {useMongoClient: true});
+
+const expect = require('chai').expect,
   net = require('net'),
   contract = require('truffle-contract'),
   erc20token = require('../build/contracts/TokenContract.json'),
@@ -9,12 +16,9 @@ const config = require('../config'),
   _ = require('lodash'),
   Web3 = require('web3'),
   web3 = new Web3(),
-  Promise = require('bluebird'),
   accountModel = require('../models/accountModel'),
-  transactionModel = require('../models/transactionModel'),
   smEvents = require('../controllers/eventsCtrl')(erc20token),
-  filterTxsBySMEventsService = require('../services/filterTxsBySMEventsService'),
-  mongoose = require('mongoose');
+  filterTxsBySMEventsService = require('../services/filterTxsBySMEventsService');
 
 let TC, accounts, transfer;
 
@@ -23,8 +27,6 @@ describe('core/sc processor', function () {
   before(async () => {
     let provider = new Web3.providers.IpcProvider(config.web3.uri, net);
     web3.setProvider(provider);
-    mongoose.Promise = Promise;
-    mongoose.connect(config.mongo.uri, {useMongoClient: true});
     await accountModel.remove({});
     erc20contract.setProvider(provider);
 
@@ -49,7 +51,7 @@ describe('core/sc processor', function () {
       .keys()
       .map(key => smEvents.signatures[key].name)
       .value();
-    expect(events).to.include.members(['Transfer','Approval']);
+    expect(events).to.include.members(['Transfer', 'Approval']);
   });
 
   // CREATION
@@ -69,11 +71,11 @@ describe('core/sc processor', function () {
     expect(balance[0].toNumber()).to.equal(900000);
     expect(balance[1].toNumber()).to.equal(100000);
   });
-  
+
   it('transfer: check DB creator account record', async () => {
     await Promise.delay(15000);
     let result = await accountModel.findOne({address: accounts[0]});
-    
+
     expect(result).to.have.property('erc20token');
     expect(result.erc20token).to.have.property(TC.address);
     expect(result.erc20token[TC.address]).to.equal(900000)
@@ -81,13 +83,13 @@ describe('core/sc processor', function () {
 
   it('transfer: check DB recipient account record', async () => {
     let result = await accountModel.findOne({address: accounts[1]});
-    
+
     expect(result).to.have.property('erc20token');
     expect(result.erc20token).to.have.property(TC.address);
     expect(result.erc20token[TC.address]).to.equal(100000);
   });
 
-  it('transfer: should transfer from account[1] account[0]', async () =>{
+  it('transfer: should transfer from account[1] account[0]', async () => {
     let balance = [];
     transfer = await TC.transfer(accounts[0], 100000, {from: accounts[1]});
     await Promise.delay(5000);
