@@ -76,7 +76,6 @@ let init = async () => {
       let tx = await Promise.promisify(web3.eth.getTransactionReceipt)(block.hash);
       let filtered = tx ? await filterTxsBySMEventsService(tx, web3, smEvents) : [];
 
-      console.log(filtered);
       for (let i = 0; i < filtered.length; i++) {
         let event = filtered[i];
         let updatedBalances = await updateBalance(Erc20Contract, tx.logs[i].address, event.payload);
