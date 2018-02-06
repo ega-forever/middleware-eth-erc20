@@ -30,10 +30,7 @@ const config = {
       listen: parseInt(process.env.SMART_CONTRACTS_EVENTS_LISTEN) || false,
       ttl: parseInt(process.env.SMART_CONTRACTS_EVENTS_TTL) || false
     }
-  },
-  transactions: {
-    ttl: parseInt(process.env.TRANSACTION_TTL) || false
-  },
+  }
 };
 
 module.exports = config;
